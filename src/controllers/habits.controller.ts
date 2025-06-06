@@ -132,4 +132,52 @@ export class HabitsController {
       },
     });
   };
+
+  metrics = async (req: Request, res: Response) => {
+    const schema = z.object({
+      id: z.string(),
+      date: z.coerce.date(),
+    });
+    const validateData = schema.safeParse({ ...req.params, ...req.query });
+
+    if (!validateData.success) {
+      const errors = buildValidationErrorMessage(validateData.error.issues);
+      return res.status(400).json({ error: 'Invalid data' });
+    }
+
+    const dateFrom = dayjs(validateData.data.date).startOf('month');
+    const dateTo = dayjs(validateData.data.date).endOf('month');
+
+    const [habitMetrics] = await habitModel.model
+      .aggregate()
+      .match({
+        _id: new mongoose.Types.ObjectId(validateData.data.id),
+      })
+      .project({
+        _id: 1,
+        name: 1,
+        completedDates: {
+          $filter: {
+            input: '$completedDates',
+            as: 'completedDate',
+            cond: {
+              $and: [
+                { $gte: ['$$completedDate', dateFrom.toDate()] },
+                { $lte: ['$$completedDate', dateTo.toDate()] },
+              ],
+            },
+          },
+        },
+      });
+    if (!habitMetrics) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: '❗ Habit not found',
+        },
+      });
+    }
+
+    return res.status(200).json(habitMetrics);
+  };
 }

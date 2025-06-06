@@ -23,6 +23,10 @@ routes.get('/habits', (req: Request, res: Response) => {
   habitsController.index(req, res);
 });
 
+routes.get('/habits/:id/metrics', (req: Request, res: Response) => {
+  habitsController.metrics(req, res);
+});
+
 routes.post('/habits', (req: Request, res: Response) => {
   habitsController.create(req, res);
 });
@@ -37,4 +41,8 @@ routes.patch('/habits/:id/toggle', (req: Request, res: Response) => {
 
 routes.post('/focus-time', (req: Request, res: Response) => {
   focusTimeController.create(req, res);
+});
+
+routes.get('/focus-time/metrics/month', (req: Request, res: Response) => {
+  focusTimeController.metricsByMonth(req, res);
 });
