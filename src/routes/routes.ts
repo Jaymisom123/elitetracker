@@ -1,13 +1,16 @@
 import { Request, Response, Router } from 'express';
 
 import packageJson from '../../package.json';
+import { AuthController } from '../controllers/auth.controller';
 import { FocusTimeController } from '../controllers/focus-time.controller';
 import { HabitsController } from '../controllers/habits.controller';
+import authMiddleware from '../middlewares/auth.middleware';
 
 export const routes = Router();
 
 const habitsController = new HabitsController();
 const focusTimeController = new FocusTimeController();
+const authController = new AuthController();
 
 routes.get('/', (req: Request, res: Response) => {
   const { name, description, version } = packageJson;
@@ -18,6 +21,16 @@ routes.get('/', (req: Request, res: Response) => {
     version,
   });
 });
+
+routes.get('/auth', (req: Request, res: Response) => {
+  authController.auth(req, res);
+});
+
+routes.get('/auth/callback', (req: Request, res: Response) => {
+  authController.authCallback(req, res);
+});
+
+routes.use(authMiddleware);
 
 routes.get('/habits', (req: Request, res: Response) => {
   habitsController.index(req, res);
@@ -45,4 +58,8 @@ routes.post('/focus-time', (req: Request, res: Response) => {
 
 routes.get('/focus-time/metrics/month', (req: Request, res: Response) => {
   focusTimeController.metricsByMonth(req, res);
+});
+
+routes.get('/focus-time', (req: Request, res: Response) => {
+  focusTimeController.index(req, res);
 });

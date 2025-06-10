@@ -29,6 +29,7 @@ export class HabitsController {
       const newHabit = await habitModel.model.create({
         name: validateData.name,
         completedDates: [],
+        userId: req.userId,
         frequency: validateData.frequency,
         startDate: validateData.startDate,
         description: validateData.description,
@@ -40,6 +41,7 @@ export class HabitsController {
           name: newHabit.name,
           completedDates: newHabit.completedDates,
           _id: newHabit._id,
+          userId: newHabit.userId,
           createdAt: newHabit.createdAt,
           updatedAt: newHabit.updatedAt,
         },
@@ -63,8 +65,10 @@ export class HabitsController {
       });
     }
   };
-  index = async (_req: Request, res: Response) => {
-    const habits = await habitModel.model.find().sort({ name: 1 });
+  index = async (req: Request, res: Response) => {
+    const habits = await habitModel.model.find({ userId: req.userId }).sort({
+      name: 1,
+    });
     return res.json(habits);
   };
 
@@ -75,9 +79,15 @@ export class HabitsController {
       return res.status(400).json({ error: 'Invalid ID format' });
     }
 
-    const deletedHabit = await habitModel.model.findByIdAndDelete(id);
+    const deletedHabit = await habitModel.model.findOneAndDelete({
+      _id: id,
+      userId: req.userId,
+    });
+
     if (!deletedHabit) {
-      return res.status(404).json({ error: 'Habit not found' });
+      return res
+        .status(404)
+        .json({ error: 'Habit not found or not authorized' });
     }
 
     return res.status(204).json();
@@ -90,9 +100,14 @@ export class HabitsController {
       return res.status(400).json({ error: 'Invalid ID format' });
     }
 
-    const habit = await habitModel.model.findById(id);
+    const habit = await habitModel.model.findOne({
+      _id: id,
+      userId: req.userId,
+    });
     if (!habit) {
-      return res.status(404).json({ error: 'Habit not found' });
+      return res
+        .status(404)
+        .json({ error: 'Habit not found or not authorized' });
     }
 
     const today = dayjs().startOf('day');
@@ -145,6 +160,16 @@ export class HabitsController {
       return res.status(400).json({ error: 'Invalid data' });
     }
 
+    const habit = await habitModel.model.findOne({
+      _id: validateData.data.id,
+      userId: req.userId,
+    });
+    if (!habit) {
+      return res.status(404).json({
+        error: 'Habit not found or not authorized',
+      });
+    }
+
     const dateFrom = dayjs(validateData.data.date).startOf('month');
     const dateTo = dayjs(validateData.data.date).endOf('month');
 
@@ -152,6 +177,7 @@ export class HabitsController {
       .aggregate()
       .match({
         _id: new mongoose.Types.ObjectId(validateData.data.id),
+        userId: req.userId,
       })
       .project({
         _id: 1,
@@ -173,7 +199,7 @@ export class HabitsController {
       return res.status(404).json({
         success: false,
         error: {
-          message: '❗ Habit not found',
+          message: '❗ Habit not found or not authorized',
         },
       });
     }

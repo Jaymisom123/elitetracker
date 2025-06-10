@@ -15,17 +15,15 @@ export class FocusTimeController {
         })
         .parse(req.body);
 
-      const focusTime = await FocusTimeModel.create({
+      const createdFocusTime = await FocusTimeModel.create({
         timeFrom: schema.timeFrom,
         timeTo: schema.timeTo,
+        userId: req.userId,
       });
-
-      const date = dayjs().toDate();
-      console.log(focusTime, date);
-
+      console.log(createdFocusTime);
       return res.status(201).json({
         success: true,
-        data: focusTime,
+        data: createdFocusTime,
       });
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
@@ -63,6 +61,7 @@ export class FocusTimeController {
       const focusTimeMetrics = await FocusTimeModel.aggregate()
         .match({
           timeFrom: { $gte: startDate, $lte: endDate },
+          userId: req.userId,
         })
         .project({
           year: { $year: '$timeFrom' },
@@ -85,6 +84,20 @@ export class FocusTimeController {
       });
       // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     } catch (error: unknown) {
+      return res.status(500).json({
+        success: false,
+        error: 'Erro interno do servidor',
+      });
+    }
+  };
+  index = async (_req: Request, res: Response) => {
+    try {
+      const focusTimes = await FocusTimeModel.find().sort({ timeFrom: 1 });
+      return res.status(200).json({
+        success: true,
+        data: focusTimes,
+      });
+    } catch (error) {
       return res.status(500).json({
         success: false,
         error: 'Erro interno do servidor',

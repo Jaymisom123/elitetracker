@@ -9,6 +9,10 @@ const HabitSchema = new Schema(
     completedDates: {
       type: [Date],
     },
+    userId: {
+      type: String,
+      required: true,
+    },
   },
   {
     versionKey: false,

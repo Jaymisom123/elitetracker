@@ -10,6 +10,10 @@ const FocusTimeSchema = new Schema(
       type: Date,
       required: true,
     },
+    userId: {
+      type: String,
+      required: true,
+    },
   },
   {
     versionKey: false,
